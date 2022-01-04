@@ -2,6 +2,19 @@
 
 A new Flutter project.
 
+## Abstract
+
+https://kundenkonto.lidl-connect.de/ is a huge website
+that simply does not load on limited internet connection.
+
+So it is almost impossible to top up your plan or buy a data package
+when the internet limit is already reached.
+
+## Implementation
+
+Basic functionality is a list of phone numbers and data limits.
+Lidl connect is a plugin.
+
 ## Getting Started
 
 This project is a starting point for a Flutter application that follows the
