@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+import '../../forms/phone_add.dart';
+import '../../providers/phone.dart';
 import '../settings/settings_view.dart';
 import 'sample_item.dart';
 import 'sample_item_details_view.dart';
 
 /// Displays a list of SampleItems.
-class SampleItemListView extends StatelessWidget {
+class SampleItemListView extends HookConsumerWidget {
   const SampleItemListView({
     Key? key,
     this.items = const [SampleItem(1), SampleItem(2), SampleItem(3)],
@@ -16,7 +20,11 @@ class SampleItemListView extends StatelessWidget {
   final List<SampleItem> items;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final phones = ref.watch(phonesProvider);
+    void add(Phone phone) => ref.read(phonesProvider.notifier).add(phone);
+    Phone phoneFromContext(BuildContext context) =>
+        Phone(Form.of(context)!.saved['phone']!);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sample Items'),
@@ -32,6 +40,11 @@ class SampleItemListView extends StatelessWidget {
           ),
         ],
       ),
+      floatingActionButton: RotatingFAB(
+        onSubmit: (context) => add(phoneFromContext(context)),
+        tooltip: 'Add a phone',
+        child: const Icon(Icons.add),
+      ),
 
       // To work with lists that may contain a large number of items, it’s best
       // to use the ListView.builder constructor.
@@ -44,12 +57,12 @@ class SampleItemListView extends StatelessWidget {
         // scroll position when a user leaves and returns to the app after it
         // has been killed while running in the background.
         restorationId: 'sampleItemListView',
-        itemCount: items.length,
+        itemCount: phones.length,
         itemBuilder: (BuildContext context, int index) {
-          final item = items[index];
+          final phone = phones[index];
 
           return ListTile(
-            title: Text('SampleItem ${item.id}'),
+            title: Text('SampleItem ${phone.phone}'),
             leading: const CircleAvatar(
               // Display the Flutter Logo image asset.
               foregroundImage: AssetImage('assets/images/flutter_logo.png'),
@@ -66,6 +79,36 @@ class SampleItemListView extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class RotatingFAB extends HookWidget {
+  final Widget child;
+  final ValueSetter<BuildContext>? onSubmit;
+  final String? tooltip;
+
+  const RotatingFAB({
+    Key? key,
+    required this.child,
+    this.onSubmit,
+    this.tooltip,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = useAnimationController(
+      duration: const Duration(milliseconds: 100),
+      upperBound: 1 / 8,
+    );
+    return FloatingActionButton(
+      onPressed: () async {
+        controller.forward();
+        await PhoneAddForm.showAsDialog(context, onSubmit: onSubmit);
+        controller.reverse();
+      },
+      tooltip: tooltip,
+      child: RotationTransition(turns: controller, child: child),
     );
   }
 }
