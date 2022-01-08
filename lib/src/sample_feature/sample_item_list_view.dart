@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+import '../../forms/phone_login.dart';
+import '../../providers/lidl.dart';
+import '../../models/phone.dart';
+import '../../providers/phones.dart';
 import '../../forms/phone_add.dart';
-import '../../providers/phone.dart';
 import '../settings/settings_view.dart';
 import 'sample_item.dart';
 import 'sample_item_details_view.dart';
@@ -23,8 +26,15 @@ class SampleItemListView extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final phones = ref.watch(phonesProvider);
     void add(Phone phone) => ref.read(phonesProvider.notifier).add(phone);
+    Future<bool> authorize(Credentials credentials) =>
+        ref.read(lidlProvider.notifier).authorize(credentials);
     Phone phoneFromContext(BuildContext context) =>
         Phone(Form.of(context)!.saved['phone']!);
+    Credentials credentialsFromContext(BuildContext context) {
+      var savedFields = Form.of(context)!.saved;
+      return Credentials(savedFields['username']!, savedFields['password']!);
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sample Items'),
@@ -67,6 +77,18 @@ class SampleItemListView extends HookConsumerWidget {
               // Display the Flutter Logo image asset.
               foregroundImage: AssetImage('assets/images/flutter_logo.png'),
             ),
+            subtitle: TextButton(
+              child: const Text('Login'),
+              onPressed: () {
+                PhoneLoginForm.showAsDialog(
+                  context,
+                  phone: phone,
+                  onSubmit: (context) => authorize(
+                    credentialsFromContext(context),
+                  ),
+                );
+              },
+            ),
             onTap: () {
               // Navigate to the details page. If the user leaves and returns to
               // the app after it has been killed while running in the
@@ -75,7 +97,7 @@ class SampleItemListView extends HookConsumerWidget {
                 context,
                 SampleItemDetailsView.routeName,
               );
-            }
+            },
           );
         },
       ),
