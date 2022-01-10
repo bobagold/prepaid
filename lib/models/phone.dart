@@ -9,6 +9,8 @@ class Phone {
   String toString() {
     return 'Phone: $phone';
   }
+
+  bool sameNumber(Phone phone) => this.phone == phone.phone;
 }
 
 class Auth {

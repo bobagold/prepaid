@@ -26,8 +26,8 @@ class SampleItemListView extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final phones = ref.watch(phonesProvider);
     void add(Phone phone) => ref.read(phonesProvider.notifier).add(phone);
-    Future<bool> authorize(Credentials credentials) =>
-        ref.read(lidlProvider.notifier).authorize(credentials);
+    Future<bool> authorize(Phone phone, Credentials credentials) =>
+        ref.read(lidlProvider.notifier).authorize(phone, credentials);
     Phone phoneFromContext(BuildContext context) =>
         Phone(Form.of(context)!.saved['phone']!);
     Credentials credentialsFromContext(BuildContext context) {
@@ -77,18 +77,22 @@ class SampleItemListView extends HookConsumerWidget {
               // Display the Flutter Logo image asset.
               foregroundImage: AssetImage('assets/images/flutter_logo.png'),
             ),
-            subtitle: TextButton(
-              child: const Text('Login'),
-              onPressed: () {
-                PhoneLoginForm.showAsDialog(
-                  context,
-                  phone: phone,
-                  onSubmit: (context) => authorize(
-                    credentialsFromContext(context),
+            subtitle: phone.auth?.expired == false
+                ? Text(
+                    'ok ${phone.balance == null ? 'authorized' : 'balance: ${phone.balance?.cents}'}')
+                : TextButton(
+                    child: const Text('Login'),
+                    onPressed: () {
+                      PhoneLoginForm.showAsDialog(
+                        context,
+                        phone: phone,
+                        onSubmit: (context) => authorize(
+                          phone,
+                          credentialsFromContext(context),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
             onTap: () {
               // Navigate to the details page. If the user leaves and returns to
               // the app after it has been killed while running in the

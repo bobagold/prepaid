@@ -9,4 +9,6 @@ final phonesProvider =
 class PhonesNotifier extends StateNotifier<List<Phone>> {
   PhonesNotifier() : super([]);
   void add(Phone phone) => state = [...state, phone];
+  void update(Phone phone) =>
+      state = state.map((p) => p.sameNumber(phone) ? phone : p).toList();
 }
