@@ -1,6 +1,7 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:prepaid/models/phone.dart';
 
+// todo move to plugin
 final lidlProvider = StateNotifierProvider<LidlNotifier, void>((ref) {
   return LidlNotifier();
 });

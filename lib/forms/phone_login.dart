@@ -4,7 +4,7 @@ import 'package:prepaid/forms/phone_add.dart';
 import 'package:prepaid/models/phone.dart';
 
 class PhoneLoginForm extends HookWidget {
-  final ValueSetter<BuildContext>? onSubmit;
+  final Future<bool> Function(BuildContext)? onSubmit;
   final Phone phone;
 
   const PhoneLoginForm({Key? key, this.onSubmit, required this.phone})
@@ -22,27 +22,32 @@ class PhoneLoginForm extends HookWidget {
         content: PhoneLoginForm(
           phone: phone,
           onSubmit: (context) async {
-            if (onSubmit != null) {
-              var success = await onSubmit(context);
-              if (!success) {
-                return;
-              }
+            var success = await onSubmit?.call(context);
+            if (success == false) {
+              return Future.value(success);
             }
             Navigator.pop(context);
+            return Future.value(success);
           },
         ),
       ),
     );
   }
 
-  void submit(BuildContext context) {
+  void submit(
+    BuildContext context,
+    ValueNotifier<AsyncSnapshot<bool>> progress,
+  ) async {
     var formState = Form.of(context);
     var valid = formState!.validate();
     if (valid) {
       formState.save();
     }
     if (valid && onSubmit != null) {
-      onSubmit!(context);
+      progress.value = const AsyncSnapshot.waiting();
+      var success = await onSubmit!(context);
+      progress.value = AsyncSnapshot.withData(ConnectionState.done, success);
+      // formState.validate()
     }
   }
 
@@ -50,6 +55,8 @@ class PhoneLoginForm extends HookWidget {
   Widget build(BuildContext context) {
     final loginController = useTextEditingController(text: '');
     final passwordController = useTextEditingController(text: '');
+    final progress = useState(const AsyncSnapshot<bool>.nothing());
+    final loading = progress.value.connectionState == ConnectionState.waiting;
     return Form(
       child: Builder(
         builder: (context) => Column(
@@ -62,8 +69,10 @@ class PhoneLoginForm extends HookWidget {
               decoration: const InputDecoration(
                 label: Text('Login'),
               ),
+              readOnly: loading,
+              // todo add async checks with generations
               validator: (value) => value?.isNotEmpty != true ? 'Empty' : null,
-              onFieldSubmitted: (value) => submit(context),
+              onFieldSubmitted: (value) => submit(context, progress),
               onSaved: (value) => Form.of(context)!.saved['username'] = value!,
             ),
             TextFormField(
@@ -73,15 +82,16 @@ class PhoneLoginForm extends HookWidget {
               decoration: const InputDecoration(
                 label: Text('Password'),
               ),
+              readOnly: loading,
               validator: (value) => value?.isNotEmpty != true ? 'Empty' : null,
-              onFieldSubmitted: (value) => submit(context),
+              onFieldSubmitted: (value) => submit(context, progress),
               onSaved: (value) => Form.of(context)!.saved['password'] = value!,
             ),
             const SizedBox(height: 16),
             OutlinedButton(
-              onPressed: () => submit(context),
+              onPressed: loading ? null : () => submit(context, progress),
               key: const Key('login'),
-              child: const Text('Login'),
+              child: Text(loading ? 'Loading...' : 'Login'),
             ),
           ],
         ),
