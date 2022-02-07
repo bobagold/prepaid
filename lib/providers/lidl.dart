@@ -4,17 +4,17 @@ import 'package:prepaid/providers/phones.dart';
 
 // todo move to plugin
 final lidlProvider = StateNotifierProvider<LidlNotifier, void>((ref) {
-  return LidlNotifier(ref);
+  return LidlNotifier(ref.read);
 });
 
 class LidlNotifier extends StateNotifier<void> {
-  LidlNotifier(this.ref) : super([]);
+  LidlNotifier(this.read) : super([]);
 
-  final Ref ref;
+  final Reader read;
 
   Future<bool> authorize(Phone phone, Credentials credentials) async {
     await Future.delayed(const Duration(seconds: 3));
-    final phones = ref.read(phonesProvider.notifier);
+    final phones = read(phonesProvider.notifier);
     var fakeAuth = Auth('xxx', DateTime.now().add(const Duration(hours: 1)));
     var updatedPhone = Phone(
       phone.phone,
@@ -26,7 +26,7 @@ class LidlNotifier extends StateNotifier<void> {
   }
 
   void fetchBalance(Phone phone) async {
-    final phones = ref.read(phonesProvider.notifier);
+    final phones = read(phonesProvider.notifier);
     await Future.delayed(const Duration(seconds: 1));
     phones.update(Phone(
       phone.phone,
