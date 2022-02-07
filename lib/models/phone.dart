@@ -1,10 +1,26 @@
-class Phone {
-  final String phone;
-  final Auth? auth;
-  final Money? balance;
-  final String? plan;
-  final Limits? limits;
-  const Phone(this.phone, {this.auth, this.balance, this.plan, this.limits});
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'phone.freezed.dart';
+part 'phone.g.dart';
+
+@freezed
+class Phones with _$Phones {
+  const factory Phones(List<Phone> phones) = _Phones;
+  factory Phones.fromJson(Map<String, dynamic> json) => _$PhonesFromJson(json);
+}
+
+@freezed
+class Phone with _$Phone {
+  const Phone._();
+  const factory Phone(
+    String phone, {
+    Auth? auth,
+    Money? balance,
+    String? plan,
+    Limits? limits,
+  }) = _Phone;
+  factory Phone.fromJson(Map<String, dynamic> json) => _$PhoneFromJson(json);
+
   @override
   String toString() {
     return 'Phone: $phone';
@@ -13,42 +29,43 @@ class Phone {
   bool sameNumber(Phone phone) => this.phone == phone.phone;
 }
 
-class Auth {
-  final String authKey;
-  final DateTime expiration;
+@freezed
+class Auth with _$Auth {
+  const Auth._();
+  const factory Auth(
+    String authKey,
+    DateTime expiration,
+  ) = _Auth;
+  factory Auth.fromJson(Map<String, dynamic> json) => _$AuthFromJson(json);
 
-  Auth(this.authKey, this.expiration);
-
-  bool get expired => DateTime.now().isAfter(expiration);
+  bool expired() => DateTime.now().isAfter(expiration);
 }
 
-class Money {
-  final int cents;
-
-  Money(this.cents);
+@freezed
+class Money with _$Money {
+  const factory Money(int cents) = _Money;
+  factory Money.fromJson(Map<String, dynamic> json) => _$MoneyFromJson(json);
 }
 
-class Limits {
-  final int bytesSpent;
-  final int bytesLeft;
-  final int minutesSpent;
-  final int minutesLeft;
-  final int smsSpent;
-  final int smsLeft;
-
-  Limits(
-    this.bytesSpent,
-    this.bytesLeft,
-    this.minutesSpent,
-    this.minutesLeft,
-    this.smsSpent,
-    this.smsLeft,
-  );
+@freezed
+class Limits with _$Limits {
+  const factory Limits(
+    int bytesSpent,
+    int bytesLeft,
+    int minutesSpent,
+    int minutesLeft,
+    int smsSpent,
+    int smsLeft,
+  ) = _Limits;
+  factory Limits.fromJson(Map<String, dynamic> json) => _$LimitsFromJson(json);
 }
 
-class Credentials {
-  final String login;
-  final String password;
-
-  Credentials(this.login, this.password);
+@freezed
+class Credentials with _$Credentials {
+  const factory Credentials(
+    String login,
+    String password,
+  ) = _Credentials;
+  factory Credentials.fromJson(Map<String, dynamic> json) =>
+      _$CredentialsFromJson(json);
 }

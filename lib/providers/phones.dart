@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:prepaid/models/phone.dart';
 import 'package:prepaid/providers/storage.dart';
@@ -17,10 +19,13 @@ class PhonesNotifier extends StateNotifier<List<Phone>> {
       _save(state = state.map((p) => p.sameNumber(phone) ? phone : p).toList());
 
   void _init() async {
-    await read(storageProvider).read('test');
+    var source = await read(storageProvider).read('phones');
+    if (source != null) {
+      state = Phones.fromJson(jsonDecode(source)).phones;
+    }
   }
 
-  void _save(List<Phone> phone) {
-    read(storageProvider).write('test', 'saved');
+  void _save(List<Phone> phones) {
+    read(storageProvider).write('phones', jsonEncode(Phones(phones).toJson()));
   }
 }

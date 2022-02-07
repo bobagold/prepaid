@@ -77,7 +77,7 @@ class SampleItemListView extends HookConsumerWidget {
               // Display the Flutter Logo image asset.
               foregroundImage: AssetImage('assets/images/flutter_logo.png'),
             ),
-            subtitle: phone.auth?.expired == false
+            subtitle: phone.auth?.expired() == false
                 ? Text(
                     'ok ${phone.balance == null ? 'authorized' : 'balance: ${phone.balance?.cents}'}')
                 : TextButton(

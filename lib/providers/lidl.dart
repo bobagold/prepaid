@@ -31,9 +31,9 @@ class LidlNotifier extends StateNotifier<void> {
     phones.update(Phone(
       phone.phone,
       auth: phone.auth,
-      balance: Money(50),
+      balance: const Money(50),
       plan: 'XXL',
-      limits: Limits(0, 10 ^ 9, 0, 100, 0, 100),
+      limits: const Limits(0, 10 ^ 9, 0, 100, 0, 100),
     ));
   }
 }
