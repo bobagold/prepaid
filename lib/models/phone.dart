@@ -10,6 +10,25 @@ class Phones with _$Phones {
 }
 
 @freezed
+class Limit with _$Limit {
+  const factory Limit({
+    required double consumed,
+    required String unit,
+    required String type,
+    required DateTime expiration,
+    required double max,
+  }) = _Limit;
+  factory Limit.fromJson(Map<String, dynamic> json) => _$LimitFromJson(json);
+}
+
+@freezed
+class PhoneState with _$PhoneState {
+  const factory PhoneState.authExpired() = AuthExpired;
+  const factory PhoneState.authorized() = Authorized;
+  const factory PhoneState.updated() = Updated;
+}
+
+@freezed
 class Phone with _$Phone {
   const Phone._();
   const factory Phone(
@@ -27,6 +46,17 @@ class Phone with _$Phone {
   }
 
   bool sameNumber(Phone phone) => this.phone == phone.phone;
+  bool notSameNumber(Phone phone) => !sameNumber(phone);
+
+  PhoneState state() {
+    if (auth?.expired() != false) {
+      return const PhoneState.authExpired();
+    }
+    if (balance == null) {
+      return const PhoneState.authorized();
+    }
+    return const PhoneState.updated();
+  }
 }
 
 @freezed
@@ -39,6 +69,8 @@ class Auth with _$Auth {
   factory Auth.fromJson(Map<String, dynamic> json) => _$AuthFromJson(json);
 
   bool expired() => DateTime.now().isAfter(expiration);
+  bool almostExpired() =>
+      DateTime.now().isAfter(expiration.subtract(const Duration(minutes: 15)));
 }
 
 @freezed
@@ -47,15 +79,16 @@ class Money with _$Money {
   factory Money.fromJson(Map<String, dynamic> json) => _$MoneyFromJson(json);
 }
 
+extension MoneyHuman on Money {
+  String humanReadable() {
+    return '€${cents / 100}';
+  }
+}
+
 @freezed
 class Limits with _$Limits {
   const factory Limits(
-    int bytesSpent,
-    int bytesLeft,
-    int minutesSpent,
-    int minutesLeft,
-    int smsSpent,
-    int smsLeft,
+    List<Limit> limits,
   ) = _Limits;
   factory Limits.fromJson(Map<String, dynamic> json) => _$LimitsFromJson(json);
 }

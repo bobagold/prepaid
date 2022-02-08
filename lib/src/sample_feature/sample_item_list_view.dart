@@ -26,14 +26,9 @@ class SampleItemListView extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final phones = ref.watch(phonesProvider);
     void add(Phone phone) => ref.read(phonesProvider.notifier).add(phone);
-    Future<bool> authorize(Phone phone, Credentials credentials) =>
-        ref.read(lidlProvider.notifier).authorize(phone, credentials);
+    void remove(Phone phone) => ref.read(phonesProvider.notifier).remove(phone);
     Phone phoneFromContext(BuildContext context) =>
         Phone(Form.of(context)!.saved['phone']!);
-    Credentials credentialsFromContext(BuildContext context) {
-      var savedFields = Form.of(context)!.saved;
-      return Credentials(savedFields['username']!, savedFields['password']!);
-    }
 
     return Scaffold(
       appBar: AppBar(
@@ -71,40 +66,72 @@ class SampleItemListView extends HookConsumerWidget {
         itemBuilder: (BuildContext context, int index) {
           final phone = phones[index];
 
-          return ListTile(
-            title: Text('SampleItem ${phone.phone}'),
-            leading: const CircleAvatar(
-              // Display the Flutter Logo image asset.
-              foregroundImage: AssetImage('assets/images/flutter_logo.png'),
-            ),
-            subtitle: phone.auth?.expired() == false
-                ? Text(
-                    'ok ${phone.balance == null ? 'authorized' : 'balance: ${phone.balance?.cents}'}')
-                : TextButton(
-                    child: const Text('Login'),
-                    onPressed: () {
-                      PhoneLoginForm.showAsDialog(
-                        context,
-                        phone: phone,
-                        onSubmit: (context) => authorize(
-                          phone,
-                          credentialsFromContext(context),
-                        ),
-                      );
-                    },
-                  ),
-            onTap: () {
-              // Navigate to the details page. If the user leaves and returns to
-              // the app after it has been killed while running in the
-              // background, the navigation stack is restored.
-              Navigator.restorablePushNamed(
-                context,
-                SampleItemDetailsView.routeName,
-              );
-            },
+          return Dismissible(
+            key: Key('d$phone'),
+            child: PhoneListItem(phone: phone),
+            onDismissed: (direction) => remove(phone),
           );
         },
       ),
+    );
+  }
+}
+
+class PhoneListItem extends HookConsumerWidget {
+  const PhoneListItem({
+    Key? key,
+    required this.phone,
+  }) : super(key: key);
+
+  final Phone phone;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    Future<bool> authorize(Phone phone, Credentials credentials) =>
+        ref.read(lidlProvider.notifier).authorize(phone, credentials);
+    void fetchBalance(Phone phone) =>
+        ref.read(lidlProvider.notifier).fetchBalance(phone);
+    Credentials credentialsFromContext(BuildContext context) {
+      var savedFields = Form.of(context)!.saved;
+      return Credentials(savedFields['username']!, savedFields['password']!);
+    }
+
+    return ListTile(
+      title: Text('Lidl ${phone.phone}'),
+      leading: const CircleAvatar(
+        // Display the Flutter Logo image asset.
+        foregroundImage: AssetImage('assets/images/flutter_logo.png'),
+      ),
+      subtitle: phone.state().when(
+          authorized: () => TextButton(
+                child: Text('Refresh ${phone.auth?.expiration}'),
+                onPressed: () => fetchBalance(phone),
+              ),
+          updated: () => Text(
+              'ok ${phone.plan} balance: ${phone.balance?.humanReadable()}'),
+          authExpired: () => TextButton(
+                child: Text('Login ${phone.auth?.expiration}'),
+                onPressed: () {
+                  PhoneLoginForm.showAsDialog(
+                    context,
+                    phone: phone,
+                    onSubmit: (context) => authorize(
+                      phone,
+                      credentialsFromContext(context),
+                    ),
+                  );
+                },
+              )),
+      onTap: () {
+        // Navigate to the details page. If the user leaves and returns to
+        // the app after it has been killed while running in the
+        // background, the navigation stack is restored.
+        Navigator.restorablePushNamed(
+          context,
+          SampleItemDetailsView.routeName,
+          arguments: phone.phone,
+        );
+      },
     );
   }
 }

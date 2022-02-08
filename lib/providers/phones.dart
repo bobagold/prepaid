@@ -15,6 +15,8 @@ class PhonesNotifier extends StateNotifier<List<Phone>> {
   final Reader read;
 
   void add(Phone phone) => _save(state = [...state, phone]);
+  void remove(Phone phone) =>
+      _save(state = state.where(phone.notSameNumber).toList());
   void update(Phone phone) =>
       _save(state = state.map((p) => p.sameNumber(phone) ? phone : p).toList());
 

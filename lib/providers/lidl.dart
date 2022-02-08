@@ -1,6 +1,9 @@
+import 'dart:developer' as developer;
+
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:prepaid/models/phone.dart';
 import 'package:prepaid/providers/phones.dart';
+import 'package:prepaid/src/lidl/lidl_repository.dart';
 
 // todo move to plugin
 final lidlProvider = StateNotifierProvider<LidlNotifier, void>((ref) {
@@ -13,9 +16,13 @@ class LidlNotifier extends StateNotifier<void> {
   final Reader read;
 
   Future<bool> authorize(Phone phone, Credentials credentials) async {
-    await Future.delayed(const Duration(seconds: 3));
+    final token = await LidlRepository().authorize({
+      'username': credentials.login,
+      'password': credentials.password,
+    });
     final phones = read(phonesProvider.notifier);
-    var fakeAuth = Auth('xxx', DateTime.now().add(const Duration(hours: 1)));
+    var fakeAuth = Auth(token?['access_token'],
+        DateTime.now().add(Duration(seconds: token?['expires_in'] ?? 0)));
     var updatedPhone = Phone(
       phone.phone,
       auth: fakeAuth,
@@ -26,14 +33,38 @@ class LidlNotifier extends StateNotifier<void> {
   }
 
   void fetchBalance(Phone phone) async {
+    if (phone.auth?.almostExpired() == true) {
+      final token = await LidlRepository().refresh({
+        'access_token': phone.auth?.authKey,
+        'token_type': 'Bearer',
+      });
+      phone = phone.copyWith(
+          auth: Auth(
+              token?['access_token'],
+              DateTime.now()
+                  .add(Duration(seconds: token?['expires_in'] ?? 0))));
+      final phones = read(phonesProvider.notifier);
+      phones.update(phone);
+    }
+    final info = await LidlRepository().fetchBalance({
+      'access_token': phone.auth?.authKey,
+      'token_type': 'Bearer',
+    });
+    developer.log('info: $info');
     final phones = read(phonesProvider.notifier);
-    await Future.delayed(const Duration(seconds: 1));
-    phones.update(Phone(
-      phone.phone,
-      auth: phone.auth,
-      balance: const Money(50),
-      plan: 'XXL',
-      limits: const Limits(0, 10 ^ 9, 0, 100, 0, 100),
+    phones.update(phone.copyWith(
+      balance: Money(info?['balance']),
+      plan: info?['tariff']?['name'],
+      limits: Limits(info?['consumptions']
+          ?.map((consumption) => Limit(
+                consumed: consumption['consumed'].toDouble(),
+                max: consumption['max'].toDouble(),
+                unit: consumption['unit'],
+                type: consumption['type'],
+                expiration: DateTime.parse(consumption['expirationDate']),
+              ))
+          ?.toList()
+          .cast<Limit>()),
     ));
   }
 }
