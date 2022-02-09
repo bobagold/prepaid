@@ -72,4 +72,23 @@ class LidlNotifier extends StateNotifier<void> {
           .cast<Limit>()),
     ));
   }
+
+  void refresh(List<Phone> phones) async {
+    for (Phone phone in phones) {
+      if (phone.auth?.expired() != true &&
+          phone.auth?.almostExpired() == true) {
+        final token = await LidlRepository().refresh({
+          'access_token': phone.auth?.authKey,
+          'token_type': 'Bearer',
+        });
+        phone = phone.copyWith(
+            auth: Auth(
+                token?['access_token'],
+                DateTime.now()
+                    .add(Duration(seconds: token?['expires_in'] ?? 0))));
+        final phones = read(phonesProvider.notifier);
+        phones.update(phone);
+      }
+    }
+  }
 }

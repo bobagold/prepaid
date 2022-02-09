@@ -30,6 +30,9 @@ class SampleItemListView extends HookConsumerWidget {
     Phone phoneFromContext(BuildContext context) =>
         Phone(Form.of(context)!.saved['phone']!);
 
+    useOnAppLifecycleStateChange(
+        (_, __) => ref.read(lidlProvider.notifier).refresh(phones));
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sample Items'),
