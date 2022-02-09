@@ -80,6 +80,7 @@ class PhoneLoginForm extends HookWidget {
               autofocus: true,
               controller: passwordController,
               autofillHints: const [AutofillHints.password],
+              obscureText: true,
               key: const Key('password'),
               decoration: const InputDecoration(
                 label: Text('Password'),
