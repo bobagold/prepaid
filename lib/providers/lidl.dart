@@ -16,20 +16,25 @@ class LidlNotifier extends StateNotifier<void> {
   final Reader read;
 
   Future<bool> authorize(Phone phone, Credentials credentials) async {
-    final token = await LidlRepository().authorize({
-      'username': credentials.login,
-      'password': credentials.password,
-    });
-    final phones = read(phonesProvider.notifier);
-    var fakeAuth = Auth(token?['access_token'],
-        DateTime.now().add(Duration(seconds: token?['expires_in'] ?? 0)));
-    var updatedPhone = Phone(
-      phone.phone,
-      auth: fakeAuth,
-    );
-    phones.update(updatedPhone);
-    fetchBalance(updatedPhone);
-    return true;
+    try {
+      final token = await LidlRepository().authorize({
+        'username': credentials.login,
+        'password': credentials.password,
+      });
+      final phones = read(phonesProvider.notifier);
+      var fakeAuth = Auth(token?['access_token'],
+          DateTime.now().add(Duration(seconds: token?['expires_in'] ?? 0)));
+      var updatedPhone = Phone(
+        phone.phone,
+        auth: fakeAuth,
+      );
+      phones.update(updatedPhone);
+      fetchBalance(updatedPhone);
+      return true;
+    } catch (err) {
+      developer.log('error', error: err);
+      return false;
+    }
   }
 
   void fetchBalance(Phone phone) async {
