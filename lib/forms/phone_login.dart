@@ -57,7 +57,7 @@ class PhoneLoginForm extends HookWidget {
     final passwordController = useTextEditingController(text: '');
     final progress = useState(const AsyncSnapshot<bool>.nothing());
     final loading = progress.value.connectionState == ConnectionState.waiting;
-    return Form(
+    return AutofillForm(
       child: Builder(
         builder: (context) => Column(
           mainAxisSize: MainAxisSize.min,
@@ -65,6 +65,7 @@ class PhoneLoginForm extends HookWidget {
             TextFormField(
               autofocus: true,
               controller: loginController,
+              autofillHints: const [AutofillHints.username],
               key: const Key('username'),
               decoration: const InputDecoration(
                 label: Text('Login'),
@@ -78,6 +79,7 @@ class PhoneLoginForm extends HookWidget {
             TextFormField(
               autofocus: true,
               controller: passwordController,
+              autofillHints: const [AutofillHints.password],
               key: const Key('password'),
               decoration: const InputDecoration(
                 label: Text('Password'),
@@ -97,5 +99,16 @@ class PhoneLoginForm extends HookWidget {
         ),
       ),
     );
+  }
+}
+
+class AutofillForm extends StatelessWidget {
+  const AutofillForm({Key? key, required this.child}) : super(key: key);
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(child: AutofillGroup(child: child));
   }
 }

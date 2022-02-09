@@ -20,6 +20,7 @@ class PhoneAddForm extends HookWidget {
             TextFormField(
               autofocus: true,
               controller: controller,
+              autofillHints: const [AutofillHints.telephoneNumberNational],
               key: const Key('phone_number'),
               validator: (value) => value?.isNotEmpty != true ? 'Empty' : null,
               onFieldSubmitted: (value) => submit(context),
