@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -66,29 +67,32 @@ class LidlNotifier extends StateNotifier<void> {
     ));
   }
 
-  void refresh(List<Phone> phones) async {
+  Future<void> refresh(List<Phone> phones) async {
     for (Phone phone in phones) {
       var auth = phone.auth;
       if (auth != null && !auth.expired() && auth.almostExpired()) {
-        final token = await LidlRepository().refresh(auth.toApi());
-        phone = phone.copyWith(auth: authFromApi(token));
         final phones = read(phonesProvider.notifier);
-        phones.update(phone);
+        try {
+          final oldToken = auth.toApi();
+          final token = await LidlRepository().refresh(oldToken);
+          phone = phone.copyWith(auth: authFromApi(token));
+          phones.update(phone);
+        } catch (err) {
+          phone = phone.copyWith(auth: null);
+          phones.update(phone);
+        }
       }
     }
   }
 }
 
 extension AuthToApi on Auth {
-  Map toApi() => {
-        'access_token': authKey,
-        'token_type': 'Bearer',
-      };
+  Map toApi() => jsonDecode(authKey);
 }
 
 Auth? authFromApi(Map? token) => token == null
     ? null
     : Auth(
-        token['access_token'],
+        jsonEncode(token),
         DateTime.now().add(Duration(seconds: token['expires_in'] ?? 0)),
       );
