@@ -1,6 +1,9 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:prepaid/models/phone.dart';
+import 'package:prepaid/providers/lidl.dart';
 import 'package:prepaid/providers/phones.dart';
 
 /// Displays detailed information about a SampleItem.
@@ -14,20 +17,20 @@ class SampleItemDetailsView extends HookConsumerWidget {
     var phoneNumber = ModalRoute.of(context)?.settings.arguments;
     final phones = ref.watch(phonesProvider);
     final phone = phones.firstWhere((phone) => phone.phone == phoneNumber);
+    Future<void> refresh() => ref.read(lidlProvider.notifier).refresh([phone]);
     return Scaffold(
       appBar: AppBar(
         title: Text('Lidl ${phone.phone}'),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      body: RefreshIndicator(
+        onRefresh: refresh,
+        child: ListView(
           children: [
-            Text('${phone.plan} ${phone.balance?.humanReadable()}'),
+            ListTile(
+              title: Text('${phone.plan} ${phone.balance?.humanReadable()}'),
+            ),
             ...phone.limits?.limits.map(
-                  (limit) => ListTile(
-                    title: Text(
-                        '${limit.consumed} of ${limit.max} ${limit.unit} ${limit.type}'),
-                  ),
+                  (limit) => LimitListItem(limit: limit),
                 ) ??
                 [],
             TextButton(
@@ -55,6 +58,54 @@ class SampleItemDetailsView extends HookConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class LimitListItem extends StatelessWidget {
+  const LimitListItem({
+    Key? key,
+    required this.limit,
+  }) : super(key: key);
+
+  final Limit limit;
+
+  @override
+  Widget build(BuildContext context) {
+    return LimitDecoration(
+      limit: limit,
+      child: ListTile(
+        title: Text(
+            '${limit.consumed} of ${limit.max} ${limit.unit} ${limit.type}'),
+      ),
+    );
+  }
+}
+
+class LimitDecoration extends StatelessWidget {
+  const LimitDecoration({
+    Key? key,
+    required this.limit,
+    required this.child,
+  }) : super(key: key);
+
+  final Limit limit;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final delta = [0, limit.max].contains(limit.consumed) ? 0 : 0.1;
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [
+          Colors.red.withOpacity(0.2),
+          Colors.green.withOpacity(0.2)
+        ], stops: [
+          max(0, limit.consumed / limit.max - delta),
+          min(1, limit.consumed / limit.max + delta)
+        ]),
+      ),
+      child: child,
     );
   }
 }
