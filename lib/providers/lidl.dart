@@ -22,11 +22,9 @@ class LidlNotifier extends StateNotifier<void> {
         'password': credentials.password,
       });
       final phones = read(phonesProvider.notifier);
-      var fakeAuth = Auth(token?['access_token'],
-          DateTime.now().add(Duration(seconds: token?['expires_in'] ?? 0)));
       var updatedPhone = Phone(
         phone.phone,
-        auth: fakeAuth,
+        auth: authFromApi(token),
       );
       phones.update(updatedPhone);
       fetchBalance(updatedPhone);
@@ -38,23 +36,18 @@ class LidlNotifier extends StateNotifier<void> {
   }
 
   void fetchBalance(Phone phone) async {
-    if (phone.auth?.almostExpired() == true) {
-      final token = await LidlRepository().refresh({
-        'access_token': phone.auth?.authKey,
-        'token_type': 'Bearer',
-      });
-      phone = phone.copyWith(
-          auth: Auth(
-              token?['access_token'],
-              DateTime.now()
-                  .add(Duration(seconds: token?['expires_in'] ?? 0))));
+    var auth = phone.auth;
+    if (auth == null) {
+      return;
+    }
+    var token = auth.toApi();
+    if (auth.almostExpired()) {
+      token = await LidlRepository().refresh(token);
+      phone = phone.copyWith(auth: authFromApi(token));
       final phones = read(phonesProvider.notifier);
       phones.update(phone);
     }
-    final info = await LidlRepository().fetchBalance({
-      'access_token': phone.auth?.authKey,
-      'token_type': 'Bearer',
-    });
+    final info = await LidlRepository().fetchBalance(token);
     developer.log('info: $info');
     final phones = read(phonesProvider.notifier);
     phones.update(phone.copyWith(
@@ -75,20 +68,27 @@ class LidlNotifier extends StateNotifier<void> {
 
   void refresh(List<Phone> phones) async {
     for (Phone phone in phones) {
-      if (phone.auth?.expired() != true &&
-          phone.auth?.almostExpired() == true) {
-        final token = await LidlRepository().refresh({
-          'access_token': phone.auth?.authKey,
-          'token_type': 'Bearer',
-        });
-        phone = phone.copyWith(
-            auth: Auth(
-                token?['access_token'],
-                DateTime.now()
-                    .add(Duration(seconds: token?['expires_in'] ?? 0))));
+      var auth = phone.auth;
+      if (auth != null && !auth.expired() && auth.almostExpired()) {
+        final token = await LidlRepository().refresh(auth.toApi());
+        phone = phone.copyWith(auth: authFromApi(token));
         final phones = read(phonesProvider.notifier);
         phones.update(phone);
       }
     }
   }
 }
+
+extension AuthToApi on Auth {
+  Map toApi() => {
+        'access_token': authKey,
+        'token_type': 'Bearer',
+      };
+}
+
+Auth? authFromApi(Map? token) => token == null
+    ? null
+    : Auth(
+        token['access_token'],
+        DateTime.now().add(Duration(seconds: token['expires_in'] ?? 0)),
+      );
