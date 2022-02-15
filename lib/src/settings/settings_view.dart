@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:prepaid/providers/settings.dart';
 
 import 'settings_controller.dart';
 
@@ -6,15 +8,14 @@ import 'settings_controller.dart';
 ///
 /// When a user changes a setting, the SettingsController is updated and
 /// Widgets that listen to the SettingsController are rebuilt.
-class SettingsView extends StatelessWidget {
-  const SettingsView({Key? key, required this.controller}) : super(key: key);
+class SettingsView extends ConsumerWidget {
+  const SettingsView({Key? key}) : super(key: key);
 
   static const routeName = '/settings';
 
-  final SettingsController controller;
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, ref) {
+    final SettingsController controller = ref.watch(settingsProvider);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
