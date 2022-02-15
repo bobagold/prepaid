@@ -35,9 +35,13 @@ class LidlNotifier implements CarrierInterface {
       phone = phone.copyWith(auth: authFromApi(token));
       yield phone;
     }
+    yield await _fetchBalance(phone, token);
+  }
+
+  Future<Phone> _fetchBalance(Phone phone, Map token) async {
     final info = await LidlRepository().fetchBalance(token);
     developer.log('info: $info');
-    yield phone.copyWith(
+    return phone.copyWith(
       balance: Money(info?['balance']),
       plan: info?['tariff']?['name'],
       limits: Limits(info?['consumptions']
@@ -70,8 +74,9 @@ class LidlNotifier implements CarrierInterface {
       phone = phone.copyWith(auth: authFromApi(token));
       yield phone;
     }
+    phone = await _fetchBalance(phone, token);
+    yield phone;
     final info = await LidlRepository().fetchDetails(token);
-    developer.log('info: $info');
     PlanOption restoreOption(dynamic data) => PlanOption(
           automaticExtension: data['automaticExtension'],
           buttonText: data['buttonText'],
@@ -111,8 +116,24 @@ class LidlNotifier implements CarrierInterface {
   }
 
   @override
-  Stream<Phone> book(Phone phone, PlanOption option) {
-    throw UnimplementedError('todo');
+  Stream<Phone> book(Phone phone, PlanOption option) async* {
+    var auth = phone.auth;
+    if (auth == null || auth.expired()) {
+      return;
+    }
+    var token = auth.toApi();
+    if (auth.almostExpired()) {
+      token = await LidlRepository().refresh(token);
+      phone = phone.copyWith(auth: authFromApi(token));
+      yield phone;
+    }
+    final success = await LidlRepository()
+        .bookTariffOption(token, {"tariffoptionId": option.tariffoptionId});
+    developer.log('success: $success');
+    if (success) {
+      phone = await _fetchBalance(phone, token);
+      yield phone;
+    }
   }
 
   @override

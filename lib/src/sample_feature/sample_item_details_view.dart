@@ -110,10 +110,17 @@ class PlanOptionListItem extends HookConsumerWidget {
             ? null
             : () async {
                 if (await confirm(context) == true) {
-                  progress.value = const AsyncSnapshot.waiting();
-                  final success = await book(phone, option);
-                  progress.value =
-                      AsyncSnapshot.withData(ConnectionState.done, success);
+                  try {
+                    progress.value = const AsyncSnapshot.waiting();
+                    final success = await book(phone, option);
+                    progress.value =
+                        AsyncSnapshot.withData(ConnectionState.done, success);
+                  } catch (err) {
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text('$err')));
+                    progress.value =
+                        AsyncSnapshot.withError(ConnectionState.done, err);
+                  }
                 }
               },
         child: Text(loading ? 'Loading...' : 'Book'),

@@ -107,7 +107,7 @@ class LidlRepository {
         method: "DELETE");
   }
 
-  Future bookTariffOption(Map token, Map bookTariffoptionInput) async {
+  Future<bool> bookTariffOption(Map token, Map bookTariffoptionInput) async {
     final bookTariffoption = await ask(token, {
       "operationName": "tariffOptions",
       "variables": {"bookTariffoptionInput": bookTariffoptionInput},
@@ -124,12 +124,13 @@ mutation tariffOptions(\$bookTariffoptionInput: BookTariffoptionInput!) {
           .trim()
     });
     developer.log('booked: $bookTariffoption');
-    developer.log(bookTariffoption?['data']?.bookTariffoption?.processId);
+    developer.log(bookTariffoption?['data']?['bookTariffoption']?['processId']);
     final confirmTariffoptionBookingInput = await ask(token, {
       "operationName": "tariffOptions",
       "variables": {
         "confirmTariffoptionBookingInput": {
-          "processId": bookTariffoption?['data']?.bookTariffoption?.processId
+          "processId": bookTariffoption?['data']?['bookTariffoption']
+              ?['processId']
         }
       },
       "query": '''
@@ -145,6 +146,8 @@ mutation tariffOptions(\$confirmTariffoptionBookingInput: ConfirmTariffoptionBoo
           .trim()
     });
     developer.log('confirmed: $confirmTariffoptionBookingInput');
+    return confirmTariffoptionBookingInput?['data']
+        ?['confirmTariffoptionBooking']['success'];
   }
 
   Future<Map?> fetchBalance(Map token) async {
