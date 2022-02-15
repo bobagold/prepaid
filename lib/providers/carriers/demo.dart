@@ -5,9 +5,11 @@ class DemoCarrier implements CarrierInterface {
   @override
   Stream<Phone> authorize(Phone phone, Credentials credentials) async* {
     await Future.delayed(const Duration(seconds: 1));
-    yield phone.copyWith(
+    final updatedPhone = phone.copyWith(
       auth: Auth('xxx', DateTime.now().add(const Duration(hours: 1))),
     );
+    yield updatedPhone;
+    yield* fetchBalance(updatedPhone);
   }
 
   @override

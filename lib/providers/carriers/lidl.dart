@@ -17,9 +17,7 @@ class LidlNotifier implements CarrierInterface {
         auth: authFromApi(token),
       );
       yield updatedPhone;
-      await for (final update in fetchBalance(updatedPhone)) {
-        yield update;
-      }
+      yield* fetchBalance(updatedPhone);
     } catch (err) {
       developer.log('error', error: err);
     }

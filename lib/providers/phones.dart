@@ -21,6 +21,7 @@ class PhonesNotifier extends StateNotifier<List<Phone>> {
       _save(state = state.map((p) => p.sameNumber(phone) ? phone : p).toList());
   Future<bool> mUpdate(Stream phones) async {
     var success = false;
+    // todo intersection for performance
     await for (final updatedPhone in phones) {
       success = true;
       update(updatedPhone);

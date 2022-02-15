@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:prepaid/models/phone.dart';
 import 'package:prepaid/providers/carriers/demo.dart';
@@ -22,7 +24,18 @@ class CarrierProvider extends StateNotifier<List<CarrierInterface>> {
 
   Future<bool> authorize(Phone phone, Credentials credentials) async {
     final updatedPhones = _carrier(phone).authorize(phone, credentials);
-    return read(phonesProvider.notifier).mUpdate(updatedPhones);
+    final success = Completer<bool>();
+    updatedPhones.listen((updatedPhone) {
+      if (!success.isCompleted) {
+        success.complete(true);
+      }
+      read(phonesProvider.notifier).update(updatedPhone);
+    }, onDone: () {
+      if (!success.isCompleted) {
+        success.complete(false);
+      }
+    });
+    return success.future;
   }
 
   void fetchBalance(Phone phone) async {
