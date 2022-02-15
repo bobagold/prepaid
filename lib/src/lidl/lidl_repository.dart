@@ -226,4 +226,63 @@ query consumptions {
     });
     return consumptions?['data']?['consumptions']?['consumptionsForUnit'];
   }
+
+  Future<Map?> fetchDetails(Map token) async {
+    final tariffoptions = await ask(token, {
+      'query': '''
+query tariffOptions {
+  tariffoptions {
+    bookableTariffoptions {
+      bookableTariffoptions {
+        additionalInfo
+        automaticExtension
+        buttonText
+        details
+        formattedPrice
+        name
+        tariffoptionId
+        name
+        price
+        duration {
+          amount
+          unit
+          __typename
+        }
+        notBookableWith
+        requiresContractSummary
+        __typename
+      }
+      __typename
+    }
+    bookedTariffoptions {
+      bookedTariffoptions {
+        automaticExtension
+        tariffoptionId
+        name
+        price
+        duration {
+          amount
+          unit
+          __typename
+        }
+        statusKey
+        startOfRuntime
+        endOfRuntime
+        possibleChangingDate
+        buttonText
+        cancelable
+        formattedPrice
+        restrictedService
+        tariffState
+        __typename
+      }
+      __typename
+    }
+    __typename
+  }
+}'''
+          .trim()
+    });
+    return tariffoptions?['data']?['tariffoptions'];
+  }
 }

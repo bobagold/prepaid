@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:prepaid/models/phone.dart';
 import 'package:prepaid/providers/carrier.dart';
@@ -18,7 +19,7 @@ class SampleItemDetailsView extends HookConsumerWidget {
     final phones = ref.watch(phonesProvider);
     final phone = phones.firstWhere((phone) => phone.phone == phoneNumber);
     Future<void> refresh() =>
-        ref.read(carrierProvider.notifier).refresh([phone]);
+        ref.read(carrierProvider.notifier).fetchDetails(phone);
     return Scaffold(
       appBar: AppBar(
         title: Text('$phone'),
@@ -34,30 +35,88 @@ class SampleItemDetailsView extends HookConsumerWidget {
                   (limit) => LimitListItem(limit: limit),
                 ) ??
                 [],
+            ...phone.planOptions?.booked
+                    ?.map((option) => BookedPlanOptionListItem(
+                          phone: phone,
+                          option: option,
+                        )) ??
+                [],
+            ...phone.planOptions?.planOptions
+                    .map((option) => PlanOptionListItem(
+                          phone: phone,
+                          option: option,
+                        )) ??
+                [],
             TextButton(
               child: const Text('Top up'),
               onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Sure?'),
-                    content: const Text('It costs!'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: const Text('ok'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('no'),
-                      ),
-                    ],
-                  ),
-                );
+                confirm(context);
               },
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+extension DateTimeHumanDate on DateTime {
+  String humanDate() => toIso8601String().split('T').first;
+}
+
+class BookedPlanOptionListItem extends StatelessWidget {
+  final Phone phone;
+  final PlanOption option;
+
+  const BookedPlanOptionListItem({
+    Key? key,
+    required this.phone,
+    required this.option,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      title: Text(option.name),
+      subtitle: Text(
+          '${option.price.humanReadable()} / ${option.duration.inDays} days'
+          ' until ${option.endOfRuntime?.humanDate()}'),
+    );
+  }
+}
+
+class PlanOptionListItem extends HookConsumerWidget {
+  const PlanOptionListItem({
+    Key? key,
+    required this.phone,
+    required this.option,
+  }) : super(key: key);
+
+  final Phone phone;
+  final PlanOption option;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    Future<bool> book(phone, option) =>
+        ref.read(carrierProvider.notifier).book(phone, option);
+    final progress = useState(const AsyncSnapshot<bool>.nothing());
+    final loading = progress.value.connectionState == ConnectionState.waiting;
+    return ListTile(
+      title: Text(option.name),
+      subtitle: Text(
+          '${option.price.humanReadable()} / ${option.duration.inDays} days'),
+      trailing: TextButton(
+        onPressed: loading
+            ? null
+            : () async {
+                if (await confirm(context) == true) {
+                  progress.value = const AsyncSnapshot.waiting();
+                  final success = await book(phone, option);
+                  progress.value =
+                      AsyncSnapshot.withData(ConnectionState.done, success);
+                }
+              },
+        child: Text(loading ? 'Loading...' : 'Book'),
       ),
     );
   }
@@ -109,4 +168,24 @@ class LimitDecoration extends StatelessWidget {
       child: child,
     );
   }
+}
+
+Future<bool?> confirm(BuildContext context) {
+  return showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Sure?'),
+      content: const Text('It costs!'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('ok'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('no'),
+        ),
+      ],
+    ),
+  );
 }

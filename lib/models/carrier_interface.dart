@@ -9,4 +9,8 @@ abstract class CarrierInterface {
   Stream<Phone> fetchBalance(Phone phone);
 
   Stream<Phone> refresh(Phone phone);
+
+  Stream<Phone> book(Phone phone, PlanOption option);
+
+  Stream<Phone> fetchDetails(Phone phone);
 }

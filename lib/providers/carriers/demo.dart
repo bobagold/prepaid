@@ -25,12 +25,40 @@ class DemoCarrier implements CarrierInterface {
     await Future.delayed(const Duration(seconds: 1));
     yield phone.copyWith(
       auth: Auth('yyy', DateTime.now().add(const Duration(hours: 1))),
+      planOptions: const PlanOptions([
+        PlanOption(
+          additionalInfo: "0,99 €/Tag",
+          automaticExtension: false,
+          buttonText: "Es werden sofort 0,99 € von deinem Guthaben abgebucht",
+          details: "Speed-Bucket Smart XS (500 MB): 500 MB zusätzliches ...",
+          formattedPrice: "0,99 €",
+          name: "Speed-Bucket Smart XS (500 MB)",
+          tariffoptionId: "CCS_92004",
+          price: Money(99),
+          duration: Duration(days: 14),
+          notBookableWith: [],
+          requiresContractSummary: false,
+        ),
+      ]),
     );
   }
+
+  @override
+  Stream<Phone> fetchDetails(Phone phone) => refresh(phone);
 
   @override
   String get name => 'demo';
 
   @override
   String get title => 'Demo';
+
+  @override
+  Stream<Phone> book(Phone phone, PlanOption option) async* {
+    await Future.delayed(const Duration(seconds: 1));
+    var planOptions = phone.copyWith.planOptions;
+    if (planOptions == null) {
+      return;
+    }
+    yield planOptions(booked: [...phone.planOptions?.booked ?? [], option]);
+  }
 }

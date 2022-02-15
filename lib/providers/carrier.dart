@@ -47,7 +47,18 @@ class CarrierProvider extends StateNotifier<List<CarrierInterface>> {
     final phonesNotifier = read(phonesProvider.notifier);
     for (Phone phone in phones) {
       final updatedPhones = _carrier(phone).refresh(phone);
-      phonesNotifier.mUpdate(updatedPhones);
+      await phonesNotifier.mUpdate(updatedPhones);
     }
+  }
+
+  Future<void> fetchDetails(Phone phone) async {
+    final phonesNotifier = read(phonesProvider.notifier);
+    final updatedPhones = _carrier(phone).fetchDetails(phone);
+    phonesNotifier.mUpdate(updatedPhones);
+  }
+
+  Future<bool> book(Phone phone, PlanOption option) async {
+    final updatedPhones = _carrier(phone).book(phone, option);
+    return read(phonesProvider.notifier).mUpdate(updatedPhones);
   }
 }

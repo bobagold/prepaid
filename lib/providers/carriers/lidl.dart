@@ -26,7 +26,7 @@ class LidlNotifier implements CarrierInterface {
   @override
   Stream<Phone> fetchBalance(Phone phone) async* {
     var auth = phone.auth;
-    if (auth == null) {
+    if (auth == null || auth.expired()) {
       return;
     }
     var token = auth.toApi();
@@ -54,20 +54,65 @@ class LidlNotifier implements CarrierInterface {
   }
 
   @override
-  Stream<Phone> refresh(Phone phone) async* {
+  Stream<Phone> refresh(Phone phone) {
+    return fetchBalance(phone);
+  }
+
+  @override
+  Stream<Phone> fetchDetails(Phone phone) async* {
     var auth = phone.auth;
-    if (auth != null && !auth.expired() && auth.almostExpired()) {
-      try {
-        final oldToken = auth.toApi();
-        final token = await LidlRepository().refresh(oldToken);
-        phone = phone.copyWith(auth: authFromApi(token));
-        yield phone;
-      } catch (err) {
-        developer.log('failed to refresh', error: err);
-        phone = phone.copyWith(auth: null);
-        yield phone;
-      }
+    if (auth == null || auth.expired()) {
+      return;
     }
+    var token = auth.toApi();
+    if (auth.almostExpired()) {
+      token = await LidlRepository().refresh(token);
+      phone = phone.copyWith(auth: authFromApi(token));
+      yield phone;
+    }
+    final info = await LidlRepository().fetchDetails(token);
+    developer.log('info: $info');
+    PlanOption restoreOption(dynamic data) => PlanOption(
+          automaticExtension: data['automaticExtension'],
+          buttonText: data['buttonText'],
+          formattedPrice: data['formattedPrice'],
+          name: data['name'],
+          tariffoptionId: data['tariffoptionId'],
+          price: Money(data['price']),
+          duration: Duration(days: data['duration']['amount']),
+          additionalInfo: data['additionalInfo'],
+          details: data['details'],
+          notBookableWith: (data['notBookableWith'] as List?)?.cast<String>(),
+          requiresContractSummary: data['requiresContractSummary'],
+          statusKey: data['statusKey'],
+          startOfRuntime: data['startOfRuntime'] != null
+              ? DateTime.tryParse(data['startOfRuntime'])
+              : null,
+          endOfRuntime: data['endOfRuntime'] != null
+              ? DateTime.tryParse(data['endOfRuntime'])
+              : null,
+          possibleChangingDate: data['possibleChangingDate'],
+          cancelable: data['cancelable'],
+          restrictedService: data['restrictedService'],
+          tariffState: data['tariffState'],
+        );
+    yield phone.copyWith(
+      planOptions: PlanOptions(
+        info?['bookableTariffoptions']?['bookableTariffoptions']
+            ?.map(restoreOption)
+            ?.toList()
+            .cast<PlanOption>(),
+        booked: info?['bookedTariffoptions']?['bookedTariffoptions']
+            ?.map(restoreOption)
+            ?.toList()
+            .cast<PlanOption>(),
+      ),
+    );
+  }
+
+  @override
+  Stream<Phone> book(Phone phone, PlanOption option) {
+    throw UnimplementedError('todo');
   }
 
   @override

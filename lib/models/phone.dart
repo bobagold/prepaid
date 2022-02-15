@@ -22,6 +22,43 @@ class Limit with _$Limit {
 }
 
 @freezed
+class PlanOption with _$PlanOption {
+  const factory PlanOption({
+    String? additionalInfo,
+    required bool automaticExtension,
+    required String buttonText,
+    String? details,
+    required String formattedPrice,
+    required String name,
+    required String tariffoptionId,
+    required Money price,
+    required Duration duration,
+    /* {"amount": 14,"unit": "DAY"} */
+    List<String>? notBookableWith,
+    bool? requiresContractSummary,
+    String? statusKey,
+    DateTime? startOfRuntime,
+    DateTime? endOfRuntime,
+    String? possibleChangingDate,
+    bool? cancelable,
+    bool? restrictedService,
+    String? tariffState,
+  }) = _PlanOption;
+  factory PlanOption.fromJson(Map<String, dynamic> json) =>
+      _$PlanOptionFromJson(json);
+}
+
+@freezed
+class PlanOptions with _$PlanOptions {
+  const factory PlanOptions(
+    List<PlanOption> planOptions, {
+    List<PlanOption>? booked,
+  }) = _PlanOptions;
+  factory PlanOptions.fromJson(Map<String, dynamic> json) =>
+      _$PlanOptionsFromJson(json);
+}
+
+@freezed
 class PhoneState with _$PhoneState {
   const factory PhoneState.authExpired() = AuthExpired;
   const factory PhoneState.authorized() = Authorized;
@@ -38,6 +75,7 @@ class Phone with _$Phone {
     Money? balance,
     String? plan,
     Limits? limits,
+    PlanOptions? planOptions,
   }) = _Phone;
   factory Phone.fromJson(Map<String, dynamic> json) => _$PhoneFromJson(json);
 
