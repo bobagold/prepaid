@@ -19,6 +19,14 @@ class PhonesNotifier extends StateNotifier<List<Phone>> {
       _save(state = state.where(phone.notSameNumber).toList());
   void update(Phone phone) =>
       _save(state = state.map((p) => p.sameNumber(phone) ? phone : p).toList());
+  Future<bool> mUpdate(Stream phones) async {
+    var success = false;
+    await for (final updatedPhone in phones) {
+      success = true;
+      update(updatedPhone);
+    }
+    return success;
+  }
 
   void _init() async {
     var source = await read(storageProvider).read('phones');

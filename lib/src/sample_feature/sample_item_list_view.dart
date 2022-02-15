@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:prepaid/providers/carrier.dart';
 
 import '../../forms/phone_login.dart';
-import '../../providers/lidl.dart';
 import '../../models/phone.dart';
 import '../../providers/phones.dart';
 import '../../forms/phone_add.dart';
@@ -27,11 +27,19 @@ class SampleItemListView extends HookConsumerWidget {
     final phones = ref.watch(phonesProvider);
     void add(Phone phone) => ref.read(phonesProvider.notifier).add(phone);
     void remove(Phone phone) => ref.read(phonesProvider.notifier).remove(phone);
-    Phone phoneFromContext(BuildContext context) =>
-        Phone(Form.of(context)!.saved['phone']!);
+    Phone phoneFromContext(BuildContext context) {
+      var formState = Form.of(context);
+      if (formState == null) {
+        throw Exception('no form found');
+      }
+      return Phone(
+        formState.saved['phone']!,
+        carrier: formState.saved['carrier']!,
+      );
+    }
 
     useOnAppLifecycleStateChange(
-        (_, __) => ref.read(lidlProvider.notifier).refresh(phones));
+        (_, __) => ref.read(carrierProvider.notifier).refresh(phones));
 
     return Scaffold(
       appBar: AppBar(
@@ -91,16 +99,16 @@ class PhoneListItem extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     Future<bool> authorize(Phone phone, Credentials credentials) =>
-        ref.read(lidlProvider.notifier).authorize(phone, credentials);
+        ref.read(carrierProvider.notifier).authorize(phone, credentials);
     void fetchBalance(Phone phone) =>
-        ref.read(lidlProvider.notifier).fetchBalance(phone);
+        ref.read(carrierProvider.notifier).fetchBalance(phone);
     Credentials credentialsFromContext(BuildContext context) {
       var savedFields = Form.of(context)!.saved;
       return Credentials(savedFields['username']!, savedFields['password']!);
     }
 
     return ListTile(
-      title: Text('Lidl ${phone.phone}'),
+      title: Text('$phone'),
       leading: const CircleAvatar(
         // Display the Flutter Logo image asset.
         foregroundImage: AssetImage('assets/images/flutter_logo.png'),

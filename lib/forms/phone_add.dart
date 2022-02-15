@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:prepaid/providers/carrier.dart';
 
-class PhoneAddForm extends HookWidget {
+class PhoneAddForm extends HookConsumerWidget {
   final ValueSetter<BuildContext>? onSubmit;
 
   const PhoneAddForm({
@@ -10,13 +12,28 @@ class PhoneAddForm extends HookWidget {
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, ref) {
     final controller = useTextEditingController(text: '');
+    final carriers = ref.watch(carrierProvider);
     return Form(
       child: Builder(
         builder: (context) => Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            DropdownButtonFormField<String>(
+              value: carriers.first.name,
+              key: const Key('phone_carrier'),
+              items: carriers
+                  .map(
+                    (carrier) => DropdownMenuItem(
+                      child: Text(carrier.title),
+                      value: carrier.name,
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) {},
+              onSaved: (value) => Form.of(context)!.saved['carrier'] = value!,
+            ),
             TextFormField(
               autofocus: true,
               controller: controller,

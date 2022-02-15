@@ -33,6 +33,7 @@ class Phone with _$Phone {
   const Phone._();
   const factory Phone(
     String phone, {
+    String? carrier,
     Auth? auth,
     Money? balance,
     String? plan,
@@ -42,7 +43,7 @@ class Phone with _$Phone {
 
   @override
   String toString() {
-    return 'Phone: $phone';
+    return '$carrier $phone';
   }
 
   bool sameNumber(Phone phone) => this.phone == phone.phone;

@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:prepaid/models/phone.dart';
-import 'package:prepaid/providers/lidl.dart';
+import 'package:prepaid/providers/carrier.dart';
 import 'package:prepaid/providers/phones.dart';
 
 /// Displays detailed information about a SampleItem.
@@ -17,10 +17,11 @@ class SampleItemDetailsView extends HookConsumerWidget {
     var phoneNumber = ModalRoute.of(context)?.settings.arguments;
     final phones = ref.watch(phonesProvider);
     final phone = phones.firstWhere((phone) => phone.phone == phoneNumber);
-    Future<void> refresh() => ref.read(lidlProvider.notifier).refresh([phone]);
+    Future<void> refresh() =>
+        ref.read(carrierProvider.notifier).refresh([phone]);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Lidl ${phone.phone}'),
+        title: Text('$phone'),
       ),
       body: RefreshIndicator(
         onRefresh: refresh,
