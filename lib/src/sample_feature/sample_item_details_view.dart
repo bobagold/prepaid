@@ -7,6 +7,23 @@ import 'package:prepaid/models/phone.dart';
 import 'package:prepaid/providers/carrier.dart';
 import 'package:prepaid/providers/phones.dart';
 
+extension ColorSchemeColors on ColorScheme {
+  Map<String, Color> colors() => {
+        "primary": primary,
+        "primaryVariant": primaryVariant,
+        "secondary": secondary,
+        "secondaryVariant": secondaryVariant,
+        "surface": surface,
+        "background": background,
+        "error": error,
+        "onPrimary": onPrimary,
+        "onSecondary": onSecondary,
+        "onSurface": onSurface,
+        "onBackground": onBackground,
+        "onError": onError,
+      };
+}
+
 /// Displays detailed information about a SampleItem.
 class SampleItemDetailsView extends HookConsumerWidget {
   const SampleItemDetailsView({Key? key}) : super(key: key);
@@ -20,6 +37,7 @@ class SampleItemDetailsView extends HookConsumerWidget {
     final phone = phones.firstWhere((phone) => phone.phone == phoneNumber);
     Future<void> refresh() =>
         ref.read(carrierProvider.notifier).fetchDetails(phone);
+    final optionPriceLimit = phone.balance ?? const Money(10000);
     return Scaffold(
       appBar: AppBar(
         title: Text('$phone'),
@@ -35,6 +53,7 @@ class SampleItemDetailsView extends HookConsumerWidget {
                   (limit) => LimitListItem(limit: limit),
                 ) ??
                 [],
+            // ColorPalette(),
             ...phone.planOptions?.booked
                     ?.map((option) => BookedPlanOptionListItem(
                           phone: phone,
@@ -42,6 +61,7 @@ class SampleItemDetailsView extends HookConsumerWidget {
                         )) ??
                 [],
             ...phone.planOptions?.planOptions
+                    .where((option) => option.price.lessThan(optionPriceLimit))
                     .map((option) => PlanOptionListItem(
                           phone: phone,
                           option: option,
@@ -162,12 +182,16 @@ class LimitDecoration extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final delta = [0, limit.max].contains(limit.consumed) ? 0 : 0.1;
+    final colorScheme = Theme.of(context).colorScheme;
+    final bright = Theme.of(context).brightness == Brightness.light;
+    final opacity = bright ? 0.2 : 1.0;
+    final colors = [
+      colorScheme.error.withOpacity(opacity),
+      colorScheme.secondary.withOpacity(opacity)
+    ];
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [
-          Colors.red.withOpacity(0.2),
-          Colors.green.withOpacity(0.2)
-        ], stops: [
+        gradient: LinearGradient(colors: colors, stops: [
           max(0, limit.consumed / limit.max - delta),
           min(1, limit.consumed / limit.max + delta)
         ]),
@@ -195,4 +219,26 @@ Future<bool?> confirm(BuildContext context) {
       ],
     ),
   );
+}
+
+class ColorPalette extends StatelessWidget {
+  const ColorPalette({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final bg = colorScheme.background;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ...colorScheme.colors().entries.map((entry) => Container(
+              height: 40,
+              color: entry.value,
+              alignment: Alignment.centerLeft,
+              child: Container(color: bg, child: Text(entry.key)),
+            )),
+      ],
+    );
+  }
 }

@@ -122,6 +122,8 @@ extension MoneyHuman on Money {
   String humanReadable() {
     return '€${cents / 100}';
   }
+
+  bool lessThan(Money balance) => cents < balance.cents;
 }
 
 @freezed
