@@ -1,20 +1,24 @@
 import 'dart:convert';
-import 'dart:developer' as developer;
 
 import 'package:dio/dio.dart';
+import 'package:logging/logging.dart';
+
+final Logger _logger = Logger('lidl-repository');
 
 class LidlRepository {
   static const commonHeaders = {
-    "accept-language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7,de;q=0.6",
+    "accept-language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7,ru;q=0.6",
     "content-type": "application/json",
-    "sec-ch-ua":
-        "\" Not A;Brand\";v=\"99\", \"Chromium\";v=\"96\", \"Google Chrome\";v=\"96\"",
+    "sec-ch-ua": "\"Google Chrome\";v=\"129\", \"Not=A?Brand\";v=\"8\", \"Chromium\";v=\"129\"",
     "sec-ch-ua-mobile": "?0",
     "sec-ch-ua-platform": "\"macOS\"",
     "sec-fetch-dest": "empty",
     "sec-fetch-mode": "cors",
     "sec-fetch-site": "same-site",
     "sec-gpc": "1",
+    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+    "origin": "https://kundenkonto.lidl-connect.de",
+    "priority": "u=1, i",
     "Referer": "https://kundenkonto.lidl-connect.de/",
     "Referrer-Policy": "strict-origin-when-cross-origin"
   };
@@ -24,16 +28,15 @@ class LidlRepository {
     required Map<String, String> headers,
     required Map data,
   }) async {
-    developer.log('data: ${jsonEncode(data)}');
-    developer.log('headers: ${jsonEncode(headers)}');
+    _logger.info('data: ${jsonEncode(data)}');
+    _logger.info('headers: ${jsonEncode(headers)}');
     final response = await Dio().post<Map>(
       url,
       options: Options(headers: headers),
       data: data,
     );
-    developer.log(
-        'code: ${response.statusCode}, message: ${response.statusMessage}');
-    developer.log('response: $response');
+    _logger.info('code: ${response.statusCode}, message: ${response.statusMessage}');
+    _logger.info('response: $response');
     return response.data;
   }
 
@@ -65,44 +68,22 @@ class LidlRepository {
   Future<Map?> authorize(Map auth) {
     return fetchJson(
       "https://api.lidl-connect.de/api/token",
-      headers: {
-        "x-transaction": "Auth-c0a21e22-anonymous",
-        "accept": "application/json, text/plain, */*",
-        ...commonHeaders
-      },
-      data: {
-        "grant_type": 'password',
-        "client_id": 'lidl',
-        "client_secret": 'lidl',
-        ...auth
-      },
+      headers: {"x-transaction": "Auth-c0a21e22-anonymous", "accept": "application/json, text/plain, */*", ...commonHeaders},
+      data: {"grant_type": 'password', "client_id": 'lidl', "client_secret": 'lidl', ...auth},
     );
   }
 
   Future refresh(Map token) {
     return fetchJson(
       "https://api.lidl-connect.de/api/token",
-      headers: {
-        "accept": "application/json, text/plain, */*",
-        "x-transaction": "Auth-c0a21e22-195432049",
-        ...commonHeaders
-      },
-      data: {
-        "grant_type": "refresh_token",
-        "client_id": "lidl",
-        "client_secret": "lidl",
-        "refresh_token": token['refresh_token']
-      },
+      headers: {"accept": "application/json, text/plain, */*", "x-transaction": "Auth-c0a21e22-195432049", ...commonHeaders},
+      data: {"grant_type": "refresh_token", "client_id": "lidl", "client_secret": "lidl", "refresh_token": token['refresh_token']},
     );
   }
 
   Future logout(token) {
     return fetch("https://api.lidl-connect.de/api/token",
-        headers: {
-          "accept": "application/json, text/plain, */*",
-          "x-transaction": "Auth-c0a21e22-195432049",
-          ...commonHeaders
-        },
+        headers: {"accept": "application/json, text/plain, */*", "x-transaction": "Auth-c0a21e22-195432049", ...commonHeaders},
         data: {"access_token": token.access_token},
         method: "DELETE");
   }
@@ -123,15 +104,12 @@ mutation tariffOptions(\$bookTariffoptionInput: BookTariffoptionInput!) {
 '''
           .trim()
     });
-    developer.log('booked: $bookTariffoption');
-    developer.log(bookTariffoption?['data']?['bookTariffoption']?['processId']);
+    _logger.info('booked: $bookTariffoption');
+    _logger.info(bookTariffoption?['data']?['bookTariffoption']?['processId']);
     final confirmTariffoptionBookingInput = await ask(token, {
       "operationName": "tariffOptions",
       "variables": {
-        "confirmTariffoptionBookingInput": {
-          "processId": bookTariffoption?['data']?['bookTariffoption']
-              ?['processId']
-        }
+        "confirmTariffoptionBookingInput": {"processId": bookTariffoption?['data']?['bookTariffoption']?['processId']}
       },
       "query": '''
 mutation tariffOptions(\$confirmTariffoptionBookingInput: ConfirmTariffoptionBookingInput!) {
@@ -145,9 +123,8 @@ mutation tariffOptions(\$confirmTariffoptionBookingInput: ConfirmTariffoptionBoo
 '''
           .trim()
     });
-    developer.log('confirmed: $confirmTariffoptionBookingInput');
-    return confirmTariffoptionBookingInput?['data']
-        ?['confirmTariffoptionBooking']['success'];
+    _logger.info('confirmed: $confirmTariffoptionBookingInput');
+    return confirmTariffoptionBookingInput?['data']?['confirmTariffoptionBooking']['success'];
   }
 
   Future<Map?> fetchBalance(Map token) async {

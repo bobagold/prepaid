@@ -26,13 +26,13 @@ class PhoneAddForm extends HookConsumerWidget {
               items: carriers
                   .map(
                     (carrier) => DropdownMenuItem(
-                      child: Text(carrier.title),
                       value: carrier.name,
+                      child: Text(carrier.title),
                     ),
                   )
                   .toList(),
               onChanged: (value) {},
-              onSaved: (value) => Form.of(context)!.saved['carrier'] = value!,
+              onSaved: (value) => Form.of(context).saved['carrier'] = value!,
             ),
             TextFormField(
               autofocus: true,
@@ -41,7 +41,7 @@ class PhoneAddForm extends HookConsumerWidget {
               key: const Key('phone_number'),
               validator: (value) => value?.isNotEmpty != true ? 'Empty' : null,
               onFieldSubmitted: (value) => submit(context),
-              onSaved: (value) => Form.of(context)!.saved['phone'] = value!,
+              onSaved: (value) => Form.of(context).saved['phone'] = value!,
             ),
             const SizedBox(height: 16),
             OutlinedButton(
@@ -57,7 +57,7 @@ class PhoneAddForm extends HookConsumerWidget {
 
   void submit(BuildContext context) {
     var formState = Form.of(context);
-    var valid = formState!.validate();
+    var valid = formState.validate();
     if (valid) {
       formState.save();
     }
@@ -89,6 +89,5 @@ class PhoneAddForm extends HookConsumerWidget {
 Map<FormState, Map<String, String>> _savedFields = {};
 
 extension FormStateFields on FormState {
-  Map<String, String> get saved =>
-      _savedFields[this] ?? (_savedFields[this] = {});
+  Map<String, String> get saved => _savedFields[this] ?? (_savedFields[this] = {});
 }

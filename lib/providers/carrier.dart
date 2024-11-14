@@ -8,15 +8,14 @@ import 'package:prepaid/providers/phones.dart';
 
 import '../models/carrier_interface.dart';
 
-final carrierProvider =
-    StateNotifierProvider<CarrierProvider, List<CarrierInterface>>((ref) {
+final carrierProvider = StateNotifierProvider<CarrierProvider, List<CarrierInterface>>((ref) {
   return CarrierProvider(ref.read);
 });
 
 class CarrierProvider extends StateNotifier<List<CarrierInterface>> {
   CarrierProvider(this.read) : super([LidlNotifier(), DemoCarrier()]);
 
-  final Reader read;
+  final PhonesNotifier Function(ProviderListenable<PhonesNotifier>) read;
 
   CarrierInterface _carrier(Phone phone) {
     return state.firstWhere((element) => element.name == phone.carrier);

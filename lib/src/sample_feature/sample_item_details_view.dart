@@ -10,16 +10,16 @@ import 'package:prepaid/providers/phones.dart';
 extension ColorSchemeColors on ColorScheme {
   Map<String, Color> colors() => {
         "primary": primary,
-        "primaryVariant": primaryVariant,
+        // "primaryVariant": primaryVariant,
         "secondary": secondary,
-        "secondaryVariant": secondaryVariant,
+        // "secondaryVariant": secondaryVariant,
         "surface": surface,
-        "background": background,
+        // "background": background,
         "error": error,
         "onPrimary": onPrimary,
         "onSecondary": onSecondary,
         "onSurface": onSurface,
-        "onBackground": onBackground,
+        // "onBackground": onBackground,
         "onError": onError,
       };
 }
@@ -35,8 +35,7 @@ class SampleItemDetailsView extends HookConsumerWidget {
     var phoneNumber = ModalRoute.of(context)?.settings.arguments;
     final phones = ref.watch(phonesProvider);
     final phone = phones.firstWhere((phone) => phone.phone == phoneNumber);
-    Future<void> refresh() =>
-        ref.read(carrierProvider.notifier).fetchDetails(phone);
+    Future<void> refresh() => ref.read(carrierProvider.notifier).fetchDetails(phone);
     final optionPriceLimit = phone.balance ?? const Money(10000);
     return Scaffold(
       appBar: AppBar(
@@ -54,18 +53,15 @@ class SampleItemDetailsView extends HookConsumerWidget {
                 ) ??
                 [],
             // ColorPalette(),
-            ...phone.planOptions?.booked
-                    ?.map((option) => BookedPlanOptionListItem(
-                          phone: phone,
-                          option: option,
-                        )) ??
+            ...phone.planOptions?.booked?.map((option) => BookedPlanOptionListItem(
+                      phone: phone,
+                      option: option,
+                    )) ??
                 [],
-            ...phone.planOptions?.planOptions
-                    .where((option) => option.price.lessThan(optionPriceLimit))
-                    .map((option) => PlanOptionListItem(
-                          phone: phone,
-                          option: option,
-                        )) ??
+            ...phone.planOptions?.planOptions.where((option) => option.price.lessThan(optionPriceLimit)).map((option) => PlanOptionListItem(
+                      phone: phone,
+                      option: option,
+                    )) ??
                 [],
             TextButton(
               child: const Text('Top up'),
@@ -98,8 +94,7 @@ class BookedPlanOptionListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       title: Text(option.name),
-      subtitle: Text(
-          '${option.price.humanReadable()} / ${option.duration.inDays} days'
+      subtitle: Text('${option.price.humanReadable()} / ${option.duration.inDays} days'
           ' until ${option.endOfRuntime?.humanDate()}'),
     );
   }
@@ -117,29 +112,25 @@ class PlanOptionListItem extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    Future<bool> book(phone, option) =>
-        ref.read(carrierProvider.notifier).book(phone, option);
+    Future<bool> book(phone, option) => ref.read(carrierProvider.notifier).book(phone, option);
     final progress = useState(const AsyncSnapshot<bool>.nothing());
     final loading = progress.value.connectionState == ConnectionState.waiting;
     return ListTile(
       title: Text(option.name),
-      subtitle: Text(
-          '${option.price.humanReadable()} / ${option.duration.inDays} days'),
+      subtitle: Text('${option.price.humanReadable()} / ${option.duration.inDays} days'),
       trailing: TextButton(
         onPressed: loading
             ? null
             : () async {
+                var messenger = ScaffoldMessenger.of(context);
                 if (await confirm(context) == true) {
                   try {
                     progress.value = const AsyncSnapshot.waiting();
                     final success = await book(phone, option);
-                    progress.value =
-                        AsyncSnapshot.withData(ConnectionState.done, success);
+                    progress.value = AsyncSnapshot.withData(ConnectionState.done, success);
                   } catch (err) {
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(SnackBar(content: Text('$err')));
-                    progress.value =
-                        AsyncSnapshot.withError(ConnectionState.done, err);
+                    messenger.showSnackBar(SnackBar(content: Text('$err')));
+                    progress.value = AsyncSnapshot.withError(ConnectionState.done, err);
                   }
                 }
               },
@@ -162,8 +153,7 @@ class LimitListItem extends StatelessWidget {
     return LimitDecoration(
       limit: limit,
       child: ListTile(
-        title: Text(
-            '${limit.consumed} of ${limit.max} ${limit.unit} ${limit.type}'),
+        title: Text('${limit.consumed} of ${limit.max} ${limit.unit} ${limit.type}'),
       ),
     );
   }
@@ -185,16 +175,10 @@ class LimitDecoration extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final bright = Theme.of(context).brightness == Brightness.light;
     final opacity = bright ? 0.2 : 1.0;
-    final colors = [
-      colorScheme.error.withOpacity(opacity),
-      colorScheme.secondary.withOpacity(opacity)
-    ];
+    final colors = [colorScheme.error.withOpacity(opacity), colorScheme.secondary.withOpacity(opacity)];
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: colors, stops: [
-          max(0, limit.consumed / limit.max - delta),
-          min(1, limit.consumed / limit.max + delta)
-        ]),
+        gradient: LinearGradient(colors: colors, stops: [max(0, limit.consumed / limit.max - delta), min(1, limit.consumed / limit.max + delta)]),
       ),
       child: child,
     );
@@ -227,7 +211,7 @@ class ColorPalette extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final bg = colorScheme.background;
+    final bg = colorScheme.surface;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -11,4 +11,4 @@ PRODUCT_NAME = prepaid
 PRODUCT_BUNDLE_IDENTIFIER = com.actvst.prepaid
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2022 com.actvst. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2024 com.actvst. All rights reserved.

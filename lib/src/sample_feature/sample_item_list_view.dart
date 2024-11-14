@@ -29,21 +29,17 @@ class SampleItemListView extends HookConsumerWidget {
     void remove(Phone phone) => ref.read(phonesProvider.notifier).remove(phone);
     Phone phoneFromContext(BuildContext context) {
       var formState = Form.of(context);
-      if (formState == null) {
-        throw Exception('no form found');
-      }
       return Phone(
         formState.saved['phone']!,
         carrier: formState.saved['carrier']!,
       );
     }
 
-    useOnAppLifecycleStateChange(
-        (_, __) => ref.read(carrierProvider.notifier).refresh(phones));
+    useOnAppLifecycleStateChange((_, __) => ref.read(carrierProvider.notifier).refresh(phones));
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sample Items'),
+        title: const Text('Prepaid phone numbers'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -98,12 +94,10 @@ class PhoneListItem extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    Future<bool> authorize(Phone phone, Credentials credentials) =>
-        ref.read(carrierProvider.notifier).authorize(phone, credentials);
-    void fetchBalance(Phone phone) =>
-        ref.read(carrierProvider.notifier).fetchBalance(phone);
+    Future<bool> authorize(Phone phone, Credentials credentials) => ref.read(carrierProvider.notifier).authorize(phone, credentials);
+    void fetchBalance(Phone phone) => ref.read(carrierProvider.notifier).fetchBalance(phone);
     Credentials credentialsFromContext(BuildContext context) {
-      var savedFields = Form.of(context)!.saved;
+      var savedFields = Form.of(context).saved;
       return Credentials(savedFields['username']!, savedFields['password']!);
     }
 
@@ -118,8 +112,7 @@ class PhoneListItem extends HookConsumerWidget {
                 child: Text('Refresh ${phone.auth?.expiration}'),
                 onPressed: () => fetchBalance(phone),
               ),
-          updated: () => Text(
-              'ok ${phone.plan} balance: ${phone.balance?.humanReadable()}'),
+          updated: () => Text('ok ${phone.plan} balance: ${phone.balance?.humanReadable()}'),
           authExpired: () => TextButton(
                 child: Text('Login ${phone.auth?.expiration}'),
                 onPressed: () {

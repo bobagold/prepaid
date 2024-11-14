@@ -1,9 +1,11 @@
 import 'dart:convert';
-import 'dart:developer' as developer;
+import 'package:logging/logging.dart';
 
 import 'package:prepaid/models/phone.dart';
 import 'package:prepaid/models/carrier_interface.dart';
 import 'package:prepaid/src/lidl/lidl_repository.dart';
+
+final Logger _logger = Logger('lidl-notifier');
 
 class LidlNotifier implements CarrierInterface {
   @override
@@ -19,7 +21,7 @@ class LidlNotifier implements CarrierInterface {
       yield updatedPhone;
       yield* fetchBalance(updatedPhone);
     } catch (err) {
-      developer.log('error', error: err);
+      _logger.severe('error', err);
     }
   }
 
@@ -40,7 +42,7 @@ class LidlNotifier implements CarrierInterface {
 
   Future<Phone> _fetchBalance(Phone phone, Map token) async {
     final info = await LidlRepository().fetchBalance(token);
-    developer.log('info: $info');
+    _logger.info('info: $info');
     return phone.copyWith(
       balance: Money(info?['balance']),
       plan: info?['tariff']?['name'],
@@ -90,12 +92,8 @@ class LidlNotifier implements CarrierInterface {
           notBookableWith: (data['notBookableWith'] as List?)?.cast<String>(),
           requiresContractSummary: data['requiresContractSummary'],
           statusKey: data['statusKey'],
-          startOfRuntime: data['startOfRuntime'] != null
-              ? DateTime.tryParse(data['startOfRuntime'])
-              : null,
-          endOfRuntime: data['endOfRuntime'] != null
-              ? DateTime.tryParse(data['endOfRuntime'])
-              : null,
+          startOfRuntime: data['startOfRuntime'] != null ? DateTime.tryParse(data['startOfRuntime']) : null,
+          endOfRuntime: data['endOfRuntime'] != null ? DateTime.tryParse(data['endOfRuntime']) : null,
           possibleChangingDate: data['possibleChangingDate'],
           cancelable: data['cancelable'],
           restrictedService: data['restrictedService'],
@@ -103,14 +101,8 @@ class LidlNotifier implements CarrierInterface {
         );
     yield phone.copyWith(
       planOptions: PlanOptions(
-        info?['bookableTariffoptions']?['bookableTariffoptions']
-            ?.map(restoreOption)
-            ?.toList()
-            .cast<PlanOption>(),
-        booked: info?['bookedTariffoptions']?['bookedTariffoptions']
-            ?.map(restoreOption)
-            ?.toList()
-            .cast<PlanOption>(),
+        info?['bookableTariffoptions']?['bookableTariffoptions']?.map(restoreOption)?.toList().cast<PlanOption>(),
+        booked: info?['bookedTariffoptions']?['bookedTariffoptions']?.map(restoreOption)?.toList().cast<PlanOption>(),
       ),
     );
   }
@@ -127,9 +119,8 @@ class LidlNotifier implements CarrierInterface {
       phone = phone.copyWith(auth: authFromApi(token));
       yield phone;
     }
-    final success = await LidlRepository()
-        .bookTariffOption(token, {"tariffoptionId": option.tariffoptionId});
-    developer.log('success: $success');
+    final success = await LidlRepository().bookTariffOption(token, {"tariffoptionId": option.tariffoptionId});
+    _logger.info('success: $success');
     if (success) {
       phone = await _fetchBalance(phone, token);
       yield phone;

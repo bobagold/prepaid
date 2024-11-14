@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:logging/logging.dart';
 import 'package:prepaid/forms/phone_add.dart';
 import 'package:prepaid/models/phone.dart';
+
+final Logger _logger = Logger('PhoneLoginForm');
 
 class PhoneLoginForm extends HookWidget {
   final Future<bool> Function(BuildContext)? onSubmit;
   final Phone phone;
 
-  const PhoneLoginForm({Key? key, this.onSubmit, required this.phone})
-      : super(key: key);
+  const PhoneLoginForm({Key? key, this.onSubmit, required this.phone}) : super(key: key);
 
   static Future<void> showAsDialog(
     BuildContext context, {
@@ -22,11 +24,12 @@ class PhoneLoginForm extends HookWidget {
         content: PhoneLoginForm(
           phone: phone,
           onSubmit: (context) async {
+            final navigator = Navigator.of(context);
             var success = await onSubmit?.call(context);
             if (success == false) {
               return Future.value(success);
             }
-            Navigator.pop(context);
+            navigator.pop();
             return Future.value(success);
           },
         ),
@@ -39,11 +42,14 @@ class PhoneLoginForm extends HookWidget {
     ValueNotifier<AsyncSnapshot<bool>> progress,
   ) async {
     var formState = Form.of(context);
-    var valid = formState!.validate();
+    _logger.info('validating $formState');
+    var valid = formState.validate();
+    _logger.info('validated $formState $valid');
     if (valid) {
       formState.save();
     }
     if (valid && onSubmit != null) {
+      _logger.info('submitting $onSubmit');
       progress.value = const AsyncSnapshot.waiting();
       var success = await onSubmit!(context);
       progress.value = AsyncSnapshot.withData(ConnectionState.done, success);
@@ -74,7 +80,7 @@ class PhoneLoginForm extends HookWidget {
               // todo add async checks with generations
               validator: (value) => value?.isNotEmpty != true ? 'Empty' : null,
               onFieldSubmitted: (value) => submit(context, progress),
-              onSaved: (value) => Form.of(context)!.saved['username'] = value!,
+              onSaved: (value) => Form.of(context).saved['username'] = value!,
             ),
             TextFormField(
               autofocus: true,
@@ -88,7 +94,7 @@ class PhoneLoginForm extends HookWidget {
               readOnly: loading,
               validator: (value) => value?.isNotEmpty != true ? 'Empty' : null,
               onFieldSubmitted: (value) => submit(context, progress),
-              onSaved: (value) => Form.of(context)!.saved['password'] = value!,
+              onSaved: (value) => Form.of(context).saved['password'] = value!,
             ),
             const SizedBox(height: 16),
             OutlinedButton(
